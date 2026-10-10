@@ -1,0 +1,37 @@
+name: Ship heartbeat
+
+on:
+  schedule:
+    - cron: "7,37 14-23,0-5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify SHIP_HEARTBEAT freshness
+        env:
+          SHIP_HEARTBEAT: ${{ vars.SHIP_HEARTBEAT }}
+        run: |
+          set -euo pipefail
+          val="${SHIP_HEARTBEAT:-}"
+          now_epoch="${HB_NOW_EPOCH:-$(date -u +%s)}"
+          expiry_epoch=1792393140
+          if (( now_epoch >= expiry_epoch )); then
+            echo "heartbeat check expired with ship AUTH"
+            exit 0
+          fi
+          if [[ -z "$val" ]]; then
+            echo "SHIP_HEARTBEAT is unset"
+            exit 1
+          fi
+          hb_epoch="$(date -u -d "$val" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$val" +%s)"
+          age=$((now_epoch - hb_epoch))
+          echo "heartbeat age ${age}s"
+          if (( age <= 1200 )); then
+            exit 0
+          fi
+          echo "SHIP_HEARTBEAT stale (>20m)"
+          exit 1
