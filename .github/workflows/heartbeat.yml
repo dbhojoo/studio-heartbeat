@@ -2,7 +2,7 @@ name: Ship heartbeat
 
 on:
   schedule:
-    - cron: "7,37 14-23,0-5 * * *"
+    - cron: "3,13,23,33,43,53 14-23,0-5 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -30,8 +30,8 @@ jobs:
           hb_epoch="$(date -u -d "$val" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$val" +%s)"
           age=$((now_epoch - hb_epoch))
           echo "heartbeat age ${age}s"
-          if (( age <= 1200 )); then
+          if (( age <= 2400 )); then
             exit 0
           fi
-          echo "SHIP_HEARTBEAT stale (>20m)"
+          echo "SHIP_HEARTBEAT stale (>40m)"
           exit 1
